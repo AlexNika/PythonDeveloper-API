@@ -6,9 +6,9 @@
     <meta content="Python developer / Проект HH API / Главная страница" name="description">
     <meta content="Александр Николаев" name="author">
     <title>Поиск вакансий / Python developer / Проект HH API</title>
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/cover.css" rel="stylesheet">
-    <link href="css/form-validation.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/cover.css" rel="stylesheet">
+    <link href="/static/css/form-validation.css" rel="stylesheet">
 </head>
 <body class="text-center">
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
@@ -16,9 +16,10 @@
         <div class="inner">
             <h3 class="masthead-brand">Проект HH.RU API</h3>
             <nav class="nav nav-masthead justify-content-center">
-                <a class="nav-link" href="index.html">Главная</a>
-                <a class="nav-link active" href="queryform.html">Поиск вакансий</a>
-                <a class="nav-link" href="contacts.html">Контакты</a>
+                <a class="nav-link" href="/">Главная</a>
+                <a class="nav-link active" href="/queryform/">Поиск вакансий</a>
+                <a class="nav-link" href="/result/">Результаты поиска</a>
+                <a class="nav-link" href="/contacts/">Контакты</a>
             </nav>
         </div>
     </header>
@@ -33,28 +34,44 @@
                 <li class="lead1">Страна/Область/Город</li>
             </ol>
             <hr class="mb-4">
-            <div class="mb-3 text-left">
-                <label for="vacancy_name">Наименование вакансии <span class="text-muted">(По умолчанию 'Python developer')</span></label>
-                <input type="text" class="form-control" id="vacancy_name" placeholder="Python developer">
-                <div class="invalid-feedback">
-                    Пожалуйста введите правильную вакансию.
+            <form method="post">
+                <fieldset class="mb-3 text-left">
+                    <legend>Выберите сайт(ы) для поиска ключевых навыков по вакансии</legend>
+                    <div>
+                        <input type="checkbox" id="hhru" name="hhru" checked>
+                        <label for="hhru">HEADHUNTER</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="sjru" name="sjru">
+                        <label for="sjru">SUPERJOB</label>
+                    </div>
+                </fieldset>
+                <div class="mb-3 text-left">
+                    <input type="text" class="form-control" id="vacancy_name"
+                           name="vacancy_name" placeholder="Python developer">
+                    <label for="vacancy_name">Наименование вакансии <span
+                            class="text-muted">(По умолчанию 'Python developer')</span></label>
+                    <div class="invalid-feedback">
+                        Пожалуйста введите правильную вакансию.
+                    </div>
                 </div>
-            </div>
-            <div class="mb-3 text-left">
-                <label for="_area">Страна/Область/Город <span
-                        class="text-muted">(По умолчанию 'Москва')</span></label>
-                <input type="text" class="form-control" id="_area" placeholder="Москва">
-                <div class="invalid-feedback">
-                    Пожалуйста введите правильное метоположение.
+                <div class="mb-3 text-left">
+                    <input type="text" class="form-control" id="area_name"
+                           name="area_name" placeholder="Москва">
+                    <label for="area_name">Страна/Область/Город <span
+                            class="text-muted">(По умолчанию 'Москва')</span></label>
+                    <div class="invalid-feedback">
+                        Пожалуйста введите правильное местоположение.
+                    </div>
                 </div>
-            </div>
-            <button class="btn btn-primary btn-lg btn-block" type="submit">Искать вакансии</button>
+                <button class="btn btn-primary btn-lg btn-block" type="submit">Искать вакансии</button>
+            </form>
         </div>
     </main>
 
     <footer class="mastfoot mt-auto">
         <div class="inner">
-            <p>@2019 Python Developer / Александр Николаев (aka @AlexNika)</p>
+            <p>@2020 Python Developer / Александр Николаев (aka @AlexNika)</p>
         </div>
     </footer>
 </div>

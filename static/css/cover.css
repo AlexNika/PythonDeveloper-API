@@ -123,7 +123,7 @@ body {
 
 .bg-image {
     height: 100%;
-    background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0.5)), url(../images/map.jpg);
+    background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0.5)), url(/static/images/map.jpg);
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
@@ -144,4 +144,18 @@ body {
 	background-image: -moz-linear-gradient(left, #fff, #000, #fff);
 	background-image: -ms-linear-gradient(left, #fff, #000, #fff);
 	background-image: -o-linear-gradient(left, #fff, #000, #fff);
+}
+
+fieldset {
+    padding: 0px 30px;
+    background: #333;
+    border: 1px solid grey;
+}
+
+legend {
+    font-size: 1rem;
+    font-weight: 300;
+    padding: 5px 10px;
+    background: #333;
+    color: white;
 }

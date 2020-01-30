@@ -15,27 +15,40 @@
         <div class="inner">
             <h3 class="masthead-brand">Проект HH.RU API</h3>
             <nav class="nav nav-masthead justify-content-center">
-                <a class="nav-link active" href="/">Главная</a>
+                <a class="nav-link" href="/">Главная</a>
                 <a class="nav-link" href="/queryform/">Поиск вакансий</a>
-                <a class="nav-link" href="/result/">Результаты поиска</a>
+                <a class="nav-link active" href="/result/">Результаты поиска</a>
                 <a class="nav-link" href="/contacts/">Контакты</a>
             </nav>
         </div>
     </header>
 
     <main class="inner cover" role="main">
-        <h1 class="cover-heading">Поиск вакансий на HH.RU</h1>
-        <p class="lead">Система находит наиболее актуальные навыки для какой-либо вакансии на сайте HeadHunter,
-            используя API.</p>
-        <hr class="mb-4">
-        <p class="lead">
-            <a class="btn btn-lg btn-secondary"
-               href="https://neuraluniversity.getcourse.ru/teach/control/lesson/view/id/114453581"
-               target="_blank">Задание</a>
-            <a class="btn btn-lg btn-secondary" href="https://github.com/AlexNika/PythonDeveloper-API/pull/1" target="_blank">Код
-                проекта на Github</a>
-            <a class="btn btn-lg btn-secondary" href="https://github.com/hhru/api" target="_blank">HeadHunter API</a>
-        </p>
+        {% with messages = get_flashed_messages(category_filter=["input"]) %}
+            {% if messages %}
+                <fieldset class="mb-3 text-left">
+                    <legend>Введены следующие параметры запроса</legend>
+                    {%- for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor -%}
+                </fieldset>
+            {% endif %}
+        {% endwith %}
+        {% with messages = get_flashed_messages(category_filter=["error"]) %}
+            {% if messages %}
+                <fieldset class="mb-3 text-left">
+                    <legend>Ошибка данных!!!</legend>
+                    {%- for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor -%}
+                </fieldset>
+            {% endif %}
+        {% endwith %}
+        {% if filename %}
+            <img src="{{ url_for('static', filename='images/key_skills.png') }}" />
+        {% else %}
+            <p>Упс... Пока нет данных для отображения :(</p>
+        {% endif %}
     </main>
 
     <footer class="mastfoot mt-auto">

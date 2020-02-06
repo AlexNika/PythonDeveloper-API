@@ -45,7 +45,7 @@
             {% endif %}
         {% endwith %}
         {% if filename %}
-            <img src="{{ url_for('static', filename='images/key_skills.png') }}" />
+            <img src="{{ filename }}" />
         {% else %}
             <p>Упс... Пока нет данных для отображения :(</p>
         {% endif %}

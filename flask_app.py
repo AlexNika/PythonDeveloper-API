@@ -1,17 +1,11 @@
-import os
 from PIL import Image
-from wordcloud import WordCloud
-from modules.api_library import *
 from flask import Flask, render_template, request, flash
-from flask import redirect, url_for, send_from_directory
+from flask import redirect, url_for, send_from_directory, session
+from wordcloud import WordCloud
 from flask_caching import Cache
 
-
-VACANCY_NAME = 'Python developer'
-AREA_NAME = 'Москва'
-HHRU_CHECKED = 'on'
-SJRU_CHECKED = None
-FILENAME = None
+from modules.api_library import *
+from modules.sql_library import *
 
 cache = Cache(config={'CACHE_TYPE': 'null'})
 app = Flask(__name__)
@@ -29,6 +23,12 @@ def add_header(response):
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico',
                                mimetype='image/vnd.microsoft.icon')
+
+
+@app.route('/images/')
+def images():
+    return send_from_directory(os.path.join(app.root_path, 'images'), 'key_skills.png',
+                               mimetype='image/png')
 
 
 @app.route('/')
@@ -49,36 +49,41 @@ def queryform_get():
 
 @app.route('/queryform/', methods=['POST'])
 def queryform_post():
-    global VACANCY_NAME
-    global AREA_NAME
-    global HHRU_CHECKED
-    global SJRU_CHECKED
-    global FILENAME
-    FILENAME = ''
+    session['VACANCY_NAME'] = 'Python developer'
+    session['AREA_NAME'] = 'Москва'
+    session['HHRU_CHECKED'] = 'on'
+    session['SJRU_CHECKED'] = None
+    session['FILENAME'] = ''
+    session['cloud_skills'] = None
     if request.form['vacancy_name']:
-        VACANCY_NAME = request.form['vacancy_name']
+        session['VACANCY_NAME'] = request.form['vacancy_name']
     if request.form['area_name']:
-        AREA_NAME = request.form['area_name']
-    HHRU_CHECKED = request.form.get('hhru')
-    SJRU_CHECKED = request.form.get('sjru')
-    if HHRU_CHECKED is None and SJRU_CHECKED is None:
-        HHRU_CHECKED = 'on'
+        session['AREA_NAME'] = request.form['area_name']
+    session['HHRU_CHECKED'] = request.form.get('hhru')
+    session['SJRU_CHECKED'] = request.form.get('sjru')
+    if session['HHRU_CHECKED'] is None and session['SJRU_CHECKED'] is None:
+        session['HHRU_CHECKED'] = 'on'
     _cloud_skills = {}
-    if HHRU_CHECKED == 'on':
-        _vacancy_info, _cloud_skills = process_hhru(VACANCY_NAME, AREA_NAME)
+    session['VACANCY_NAME'] = session['VACANCY_NAME'].lower()
+    if session['HHRU_CHECKED'] == 'on':
+        _area_id = area_dbrw(session['AREA_NAME'])
+        if not _area_id:
+            flash(f'В базе HH.RU регион "{session["AREA_NAME"]}" не найден! Попробуйте ввести другой регион.', 'error')
+            return redirect(url_for('result'), code=302)
+        _result, _request_id = request_dbrw(session['VACANCY_NAME'], _area_id)
+        if not _result:
+            _vacancy_info, _cloud_skills = process_hhru(session['VACANCY_NAME'], session['AREA_NAME'], _area_id)
+            if _cloud_skills:
+                _vacancy_id = vacancy_info_dbw(_request_id, _vacancy_info)
+                key_skills_dbw(_vacancy_id, _cloud_skills)
+        else:
+            _vacancy_id = vacancy_info_dbr(_request_id)
+            if _vacancy_id:
+                _cloud_skills = key_skills_dbr(_vacancy_id)
     if _cloud_skills:
-        cloud = WordCloud(background_color=background_color, width=600, max_words=200, ranks_only=True, stopwords=set())
-        cloud.generate_from_frequencies(_cloud_skills)
-        FILENAME = 'key_skills.png'
-        _cloud_skills_array = cloud.to_array()
-        image = Image.fromarray(_cloud_skills_array)
-        image.save(FILENAME)
-        _filename = f'{os.path.join(app.root_path, "static")}\\images\\{FILENAME}'
-        if os.path.exists(_filename):
-            os.remove(_filename)
-        os.rename(FILENAME, f'{os.path.join(app.root_path, "static")}\\images\\{FILENAME}')
+        session['cloud_skills'] = _cloud_skills
     else:
-        flash(f'В регионе "{AREA_NAME}" вакансий "{VACANCY_NAME}" не найдено!', 'error')
+        flash(f'В регионе "{session["AREA_NAME"]}" вакансий "{session["VACANCY_NAME"]}" не найдено!', 'error')
     return redirect(url_for('result'), code=302)
 
 
@@ -86,12 +91,29 @@ def queryform_post():
 def result():
     with app.app_context():
         cache.clear()
-    global FILENAME
-    flash(f'Название вакансии - {VACANCY_NAME}', 'input')
-    flash(f'Регион поиска - {AREA_NAME}', 'input')
-    flash(f'Выбран сайт HEADHUNTER  - {"Да" if HHRU_CHECKED == "on" else "Нет"}', 'input')
-    flash(f'Выбран сайт SUPERJOB - {"Да" if SJRU_CHECKED == "on" else "Нет"}', 'input')
-    return render_template('result.html', filename=FILENAME)
+    cloud = WordCloud(background_color=background_color, width=600, max_words=200,
+                      ranks_only=True, stopwords=set())
+    _filename = 'key_skills.png'
+    _image_folder = 'images'
+    _fileurl = url_for('images', filename=_filename)
+    _filename = f'{os.path.join(app.root_path, _image_folder, _filename)}'
+    if os.path.exists(_filename):
+        os.remove(_filename)
+    try:
+        if session.get('cloud_skills', None):
+            cloud.generate_from_frequencies(session.get('cloud_skills', None))
+            _cloud_skills_array = cloud.to_array()
+            image = Image.fromarray(_cloud_skills_array)
+            image.save(_filename)
+        else:
+            return render_template('result.html')
+    except AttributeError:
+        return render_template('result.html')
+    flash(f'Название вакансии - {session.get("VACANCY_NAME", None)}', 'input')
+    flash(f'Регион поиска - {session.get("AREA_NAME", None)}', 'input')
+    flash(f'Выбран сайт HEADHUNTER  - {"Да" if session.get("HHRU_CHECKED", None) == "on" else "Нет"}', 'input')
+    flash(f'Выбран сайт SUPERJOB - {"Да" if session.get("SJRU_CHECKED", None) == "on" else "Нет"}', 'input')
+    return render_template('result.html', filename=_fileurl)
 
 
 if __name__ == "__main__":

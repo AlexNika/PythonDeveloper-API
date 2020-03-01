@@ -1,13 +1,14 @@
+import copy
+import json
+import pickle
 import re
 import sys
-import json
 import time
-import copy
-import pickle
+from urllib.parse import urlencode
+
 import requests
 from tqdm import tqdm
-from pymongo import MongoClient
-from urllib.parse import urlencode
+
 from modules.variables import *
 
 
@@ -85,7 +86,7 @@ def get_vacancy(v_id, exchange_rates):
     }
 
 
-def get_vacancies(query, exchange_rates, collection):
+def get_vacancies(query, exchange_rates):
     _ids = []
     _parameters = {'text': query, **DEFAULT_PARAMETERS}
     _url = f'{API_BASE_URL}vacancies?{urlencode(_parameters)}'
@@ -110,8 +111,6 @@ def get_vacancies(query, exchange_rates, collection):
     for _id in tqdm(_ids):
         time.sleep(TIMEOUT)
         _vacancy = get_vacancy(_id, exchange_rates)
-        if USE_SQL:
-            collection.insert_one(_vacancy)
         _vacancies.append(_vacancy)
     return _vacancies
 
@@ -129,13 +128,11 @@ def get_area(v_area):
         return None
 
 
-def process_hhru(_vacancy_name, _area_name):
+def process_hhru(_vacancy_name, _area_name, _area_id):
     key_skills = {}
-    vacancies = []
     vacancy_info = {}
     min_salary = []
     max_salary = []
-    _area_id = get_area(_area_name)
     if _area_id is not None:
         DEFAULT_PARAMETERS['area'] = _area_id
     else:
@@ -144,15 +141,10 @@ def process_hhru(_vacancy_name, _area_name):
     file_json = f'HH_vacancies_{_vacancy_name.replace(" ", "_")}_area_{_area_id}.json'
     exchange_rates = update_exchange_rates()
     print('Идет процесс обработки запроса...')
-    collection = None
-    if USE_SQL:
-        client = MongoClient('localhost', 27017)
-        mongo_base = client.db_PYDEV_HW12
-        collection = mongo_base['HH.RU']
+    _vacancies = get_vacancies(_vacancy_name, exchange_rates)
     if USE_FILE:
         with open(file_pickle, 'wb') as file:
-            pickle.dump(vacancies, file)
-    _vacancies = get_vacancies(_vacancy_name, exchange_rates, collection)
+            pickle.dump(_vacancies, file)
     if not _vacancies:
         return None, None
     print('Идет процесс обработки статистики...')
@@ -162,11 +154,13 @@ def process_hhru(_vacancy_name, _area_name):
             key_skills[skill] = key_skills.get(skill, 0) + 1
         min_salary.append(vacancy['min_salary'] if vacancy['min_salary'] else 0)
         max_salary.append(vacancy['max_salary'] if vacancy['max_salary'] else 0)
+    min_salary = list(filter(lambda x: x != 0, min_salary))
+    max_salary = list(filter(lambda x: x != 0, max_salary))
     cloud_skills = copy.deepcopy(key_skills)
     avg_min_salary = int(round(sum(min_salary) / len(min_salary), 0))
     avg_max_salary = int(round(sum(max_salary) / len(max_salary), 0))
     vacancy_info['1.keywords'] = _vacancy_name
-    vacancy_info['2.count'] = len(vacancies)
+    vacancy_info['2.count'] = len(_vacancies)
     vacancy_info['3.avg_min_salary'] = avg_min_salary
     vacancy_info['4.avg_max_salary'] = avg_max_salary
     vacancy_info['5.skills_quantity'] = len(key_skills)

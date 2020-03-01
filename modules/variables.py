@@ -6,11 +6,7 @@ DEFAULT_PARAMETERS = {
 }
 TIMEOUT = 1
 EX_URL = 'https://api.exchangerate-api.com/v4/latest/RUB'
-USE_SQL = False
 USE_FILE = False
 API_BASE_URL = 'https://api.hh.ru/'
-
-
-# area_id = DEFAULT_PARAMETERS['area']
 background_color = '#333333'
-
+DB_FILENAME = 'ksc.db3'

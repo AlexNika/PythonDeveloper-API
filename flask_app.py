@@ -1,11 +1,14 @@
+import os
+
 from PIL import Image
 from flask import Flask, render_template, request, flash
 from flask import redirect, url_for, send_from_directory, session
-from wordcloud import WordCloud
 from flask_caching import Cache
+from wordcloud import WordCloud
 
-from modules.api_library import *
-from modules.sql_library import *
+import modules.api_library as APILib
+import modules.sqlalchemy_library as SQLLib
+from modules.variables import background_color
 
 cache = Cache(config={'CACHE_TYPE': 'null'})
 app = Flask(__name__)
@@ -66,20 +69,20 @@ def queryform_post():
     _cloud_skills = {}
     session['VACANCY_NAME'] = session['VACANCY_NAME'].lower()
     if session['HHRU_CHECKED'] == 'on':
-        _area_id = area_dbrw(session['AREA_NAME'])
+        _area_id = SQLLib.area_dbrw(session['AREA_NAME'])
         if not _area_id:
             flash(f'В базе HH.RU регион "{session["AREA_NAME"]}" не найден! Попробуйте ввести другой регион.', 'error')
             return redirect(url_for('result'), code=302)
-        _result, _request_id = request_dbrw(session['VACANCY_NAME'], _area_id)
+        _result, _request_id = SQLLib.request_dbrw(session['VACANCY_NAME'], _area_id)
         if not _result:
-            _vacancy_info, _cloud_skills = process_hhru(session['VACANCY_NAME'], session['AREA_NAME'], _area_id)
+            _vacancy_info, _cloud_skills = APILib.process_hhru(session['VACANCY_NAME'], session['AREA_NAME'], _area_id)
             if _cloud_skills:
-                _vacancy_id = vacancy_info_dbw(_request_id, _vacancy_info)
-                key_skills_dbw(_vacancy_id, _cloud_skills)
+                _vacancy_id = SQLLib.vacancy_info_dbw(_request_id, _vacancy_info)
+                SQLLib.key_skills_dbw(_vacancy_id, _cloud_skills)
         else:
-            _vacancy_id = vacancy_info_dbr(_request_id)
+            _vacancy_id = SQLLib.vacancy_info_dbr(_request_id)
             if _vacancy_id:
-                _cloud_skills = key_skills_dbr(_vacancy_id)
+                _cloud_skills = SQLLib.key_skills_dbr(_vacancy_id)
     if _cloud_skills:
         session['cloud_skills'] = _cloud_skills
     else:
@@ -121,3 +124,5 @@ if __name__ == "__main__":
     app.config['SECRET_KEY'] = 'a really really really really long secret key'
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run()
+
+

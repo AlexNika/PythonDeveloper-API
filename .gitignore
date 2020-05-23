@@ -127,3 +127,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/modules/ksc4alchemy.db3
+/modules/ksc.db3
